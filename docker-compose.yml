@@ -1,0 +1,42 @@
+version: "3.3"
+
+services:
+  web:
+    build: .
+    image: web
+    container_name: web
+    command: sh -c "python manage.py makemigrations && python manage.py migrate && python setup.py && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8080:8000"
+    volumes:
+      - ./src/exchange/migrations/:/src/exchange/migrations/
+      
+    restart: unless-stopped
+
+  celery-worker:
+    image: web
+    container_name: celery-worker
+    command: sh -c "celery -A aban worker -l INFO -Ofair --concurrency=1"
+    depends_on:
+      - web
+    restart: unless-stopped
+
+  rabbitmq:
+    container_name: rabbitmq
+    hostname: rabbitmq
+    image: rabbitmq:3.12-management
+    restart: on-failure 
+    ports:
+      - "5672:5672"
+
+  db:
+    container_name: db
+    image: postgres:13.11-bullseye
+    restart: unless-stopped
+    # no volume for test
+    # volumes:
+    #   - app-db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres

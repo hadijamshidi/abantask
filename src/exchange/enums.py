@@ -1,0 +1,6 @@
+
+
+
+class Quote:
+    USD = 'USD'
+    
